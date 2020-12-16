@@ -9,7 +9,6 @@ Rails.application.routes.draw do
   # callback for user entry
   match 'ivr/selection' => 'twilio#menu_selection', via: [:get, :post], as: 'menu'
 
-  # callback for planet entry
-  match 'ivr/planets' => 'twilio#planet_selection', via: [:get, :post], as: 'planets'
+
 
 end

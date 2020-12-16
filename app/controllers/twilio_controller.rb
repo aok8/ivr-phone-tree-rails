@@ -66,10 +66,13 @@ class TwilioController < ApplicationController
 end
 
 def phone_tree
-  first_call = "praneet"
+  numbers = []
+  names = []
+  
   response = Twilio::TwiML::VoiceResponse.new
-  response.say("Connecting you to #{first_call}. ")
-  response.dial(number: "+16308533980",
+  response.say("Connecting you to #{names[i]}.")
+  response.dial(number: numbers[i],
                 action: "/ivr/welcome")
   render xml: response.to_s
 end
+
