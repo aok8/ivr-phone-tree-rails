@@ -2,9 +2,6 @@ require 'twilio-ruby'
 require 'sanitize'
 
 class TwilioController < ApplicationController
-  
-
-
   def index
     render text: "Dial Me."
   end
@@ -29,13 +26,24 @@ class TwilioController < ApplicationController
       @output = "This phone routing service is to make reaching the most available responsible party."
       twiml_say(@output, true)
     when "2"
-      phone_tree
+      phone_tree(0)
     else
       @output = "Returning to the main menu."
       twiml_say(@output)
     end
 
   end
+
+  def next_caller
+    @number = request.POST[:number]
+    numbers = []
+  
+    response = Twilio::TwiML::VoiceResponse.new
+    response.say("Connecting you to new reciever.")
+    response.dial(number: numbers[@number],
+                  action: "/ivr/welcome")
+    render xml: response.to_s
+  end  
 
   private
 
@@ -63,16 +71,18 @@ class TwilioController < ApplicationController
 
     render xml: response.to_s
   end
+  
+  def phone_tree(phone_number)
+    numbers = []
+    response = Twilio::TwiML::VoiceResponse.new
+    response.say("Connecting you to new reciever.")
+    response.dial(number: numbers[phone_number],
+                  action: "/ivr/next_caller/#{phone_number+1}")
+    render xml: response.to_s
+  end
+
 end
 
-def phone_tree
-  numbers = []
-  names = []
-  
-  response = Twilio::TwiML::VoiceResponse.new
-  response.say("Connecting you to #{names[i]}.")
-  response.dial(number: numbers[i],
-                action: "/ivr/welcome")
-  render xml: response.to_s
-end
+
+
 
