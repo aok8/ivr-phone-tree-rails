@@ -1,5 +1,7 @@
 require 'twilio-ruby'
 require 'sanitize'
+require 'phones'
+include PhoneNumbers
 
 class TwilioController < ApplicationController
   def index
@@ -35,11 +37,11 @@ class TwilioController < ApplicationController
   end
 
   def next_caller
-    @number = request.POST[:number]
-    numbers = []
-  
+    @number = params[:num].to_i
+    numbers = LIST['list-1']
+    Rails.logger.warn "New Call ##{numbers[@number]}"
     response = Twilio::TwiML::VoiceResponse.new
-    response.say("Connecting you to new reciever.")
+    response.say("Connecting you to next available reciever.")
     response.dial(number: numbers[@number],
                   action: "/ivr/welcome")
     render xml: response.to_s
@@ -73,9 +75,10 @@ class TwilioController < ApplicationController
   end
   
   def phone_tree(phone_number)
-    numbers = []
+    numbers = LIST['list-1']
     response = Twilio::TwiML::VoiceResponse.new
-    response.say("Connecting you to new reciever.")
+    response.say("Connecting you to next available reciever.")
+    Rails.logger.warn "New Call ##{numbers[phone_number]}"
     response.dial(number: numbers[phone_number],
                   action: "/ivr/next_caller/#{phone_number+1}")
     render xml: response.to_s

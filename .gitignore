@@ -16,3 +16,4 @@
 /tmp
 .env
 .ruby-version
+/app/controllers/phones.rb
