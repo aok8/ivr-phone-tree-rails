@@ -2,8 +2,10 @@ require 'twilio-ruby'
 require 'sanitize'
 require 'phones'
 include PhoneNumbers
-
+@voice = 'alice'
+@language = 'en-GB'
 class TwilioController < ApplicationController
+  
   def index
     render text: "Dial Me."
   end
@@ -15,7 +17,6 @@ class TwilioController < ApplicationController
     gather.say("Thanks for calling the Household Phone Service. Please press 1 for
     information and instructions. Press 2 to be transfered to the next available number", loop: 3)
     response.append(gather)
-
     render xml: response.to_s
   end
 
@@ -26,7 +27,7 @@ class TwilioController < ApplicationController
     case user_selection
     when "1"
       @output = "This phone routing service is to make reaching the most available responsible party."
-      twiml_say(@output, true)
+      twiml_say(@output, false)
     when "2"
       phone_tree(0)
     else
@@ -36,15 +37,23 @@ class TwilioController < ApplicationController
 
   end
 
+  
   def next_caller
+    @numbers = LIST['list-1']
     @number = params[:num].to_i
-    numbers = LIST['list-1']
-    Rails.logger.warn "New Call ##{numbers[@number]}"
-    response = Twilio::TwiML::VoiceResponse.new
-    response.say("Connecting you to next available reciever.")
-    response.dial(number: numbers[@number],
-                  action: "/ivr/welcome")
-    render xml: response.to_s
+    if @number < @numbers.length
+      Rails.logger.warn "New Call ##{@numbers[@number]}"
+      response = Twilio::TwiML::VoiceResponse.new
+      response.say("Connecting you to next available reciever.", voice: @voice, language: @language)
+      response.dial(number: @numbers[@number],
+                    action: "/ivr/next_caller/#{@number+1}")
+      render xml: response.to_s
+    else
+      response = Twilio::TwiML::VoiceResponse.new
+      response.say("Thanks for calling the Household Phone Service. Goodbye.", voice: @voice, language: @language)
+      response.hangup
+      render xml: response.to_s
+    end
   end  
 
   private
@@ -54,9 +63,9 @@ class TwilioController < ApplicationController
     # Respond with some TwiML and say something.
     # Should we hangup or go back to the main menu?
     response = Twilio::TwiML::VoiceResponse.new do |r|
-      r.say(phrase, voice: 'alice', language: 'en-GB')
+      r.say(phrase, voice: @voice, language: @language)
       if exit
-        r.say("Thanks for calling the Household Phone Service.")
+        r.say("Thanks for calling the Household Phone Service.", voice: @voice, language: @language)
         r.hangup
       else
         r.redirect(welcome_path)
@@ -65,27 +74,15 @@ class TwilioController < ApplicationController
 
     render xml: response.to_s
   end
-
-  def twiml_dial(phone_number)
-    response = Twilio::TwiML::VoiceResponse.new do |r|
-      r.dial(number: phone_number)
-    end
-
-    render xml: response.to_s
-  end
   
-  def phone_tree(phone_number)
-    numbers = LIST['list-1']
+  def phone_tree(reciever_number)
+    @numbers = LIST['list-1']
     response = Twilio::TwiML::VoiceResponse.new
-    response.say("Connecting you to next available reciever.")
-    Rails.logger.warn "New Call ##{numbers[phone_number]}"
-    response.dial(number: numbers[phone_number],
-                  action: "/ivr/next_caller/#{phone_number+1}")
+    response.say("Connecting you to next available reciever.", voice: @voice, language: @language)
+    Rails.logger.warn "New Call ##{@numbers[reciever_number]}"
+    response.dial(number: @numbers[reciever_number],
+                  action: "/ivr/next_caller/#{reciever_number+1}")
     render xml: response.to_s
   end
 
 end
-
-
-
-
